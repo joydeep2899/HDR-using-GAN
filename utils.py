@@ -4,6 +4,8 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 
+import tensorflow as tf
+
 def weights(pixel_values):
 #the weighting function for calculating weights from pixels
  zmin,zmax=0,255
@@ -147,6 +149,28 @@ def EV(N,T,ISO):
      EV = math.log(math.pow(N,2)/T,2)-math.log((iso/100),2)
      EV=round(EV,3)
      return EV
+
+
+def mean_squared_error(i1,i2):
+    m1,n1=i1.shape
+    m2,n2=i2.shape
+    if((m1==m2) and (n1==n2)):
+       m=m1
+       n=n1
+    sum=0
+    diff=0
+    for i in range(m):
+        for j in range(n):
+             diff=i1[i,j]-i2[i,j]
+             diff_sq=diff*diff
+             sum=sum+diff_sq
+    mse=sum/(m*n)
+    return mse
+def psnr(mean_squared_error,i1,i2):
+    R=1
+    mse=mean_squared_error(i1,i2)
+    psnr=10*math.log((R*R)/mse,10)  
+    return psnr  
 
 """
 

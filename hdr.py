@@ -1,4 +1,4 @@
-import cv2
+
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras import layers as tfl
@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from utils import EV
 from mprelu import MPReLU
 from loss import loss
+from utils import psnr
 #img =cv2.imread("test.jpeg")
 print(tfl)
 #original_img=np.asarray(img)
@@ -20,7 +21,7 @@ epsilon=0.00005
 
 
 
-MPReLU=MPReLU()
+
 
 
 
@@ -35,7 +36,7 @@ class hdrGAN:
        
         self.img=inputimg
         self.input_dim=self.img.shape
-    def gplus(self,input_dim,output_dim):
+    def gplus(self):
           # with tf.compat.v1.VariableScope(reuse=False,name="generator") as scope: 
            
             model=tf.keras.Sequential()
@@ -113,7 +114,7 @@ class hdrGAN:
 
 
            
-            model.add(tfl.Conv2DTranspose(filters=3,kernel_size=(10,10),strides=(2,2),padding='same',name='deconvolution layer11',data_format="channels_last"))
+            model.add(tfl.Conv2DTranspose(filters=3,kernel_size=(10,10),strides=(2,2),padding='same',name='deconvolution_layer11',data_format="channels_last"))
            # model.add(tfl.BatchNormalization(epsilon=epsilon))
             model.add(tfl.PReLU())  
             # model.add(tfl.Flatten())
@@ -121,7 +122,7 @@ class hdrGAN:
             return model  
 
 
-    def gminus(self,input_dim,output_dim):
+    def gminus(self):
           # with tf.compat.v1.VariableScope(reuse=False,name="generator") as scope: 
            
             model=tf.keras.Sequential()
@@ -199,7 +200,7 @@ class hdrGAN:
 
 
            
-            model.add(tfl.Conv2DTranspose(filters=3,kernel_size=(10,10),strides=(2,2),padding='same',name='deconvolution layer11',data_format="channels_last"))
+            model.add(tfl.Conv2DTranspose(filters=3,kernel_size=(10,10),strides=(2,2),padding='same',name='deconvolution_layer11',data_format="channels_last"))
            # model.add(tfl.BatchNormalization(epsilon=epsilon))
             model.add(MPReLU())  
             # model.add(tfl.Flatten())
@@ -207,17 +208,18 @@ class hdrGAN:
             return model  
   
 
-    def dplus(self,input_dim,output_dim):
+    def dplus(self):
                       # with tf.compat.v1.VariableScope(reuse=False,name="discriminator") as scope: 
-                      inp = tf.keras.layers.Input(shape=[256, 256, 3], name='input_image')
-                      tar = tf.keras.layers.Input(shape=[256, 256, 3], name='target_image')
-
+                      input_dim=(128,128,3)
+                      inp = tf.keras.layers.Input(shape=input_dim, name='input_image')
+                      tar = tf.keras.layers.Input(shape=input_dim, name='target_image')
+                      
                       model=tf.keras.Sequential()       
                      
                      # model.add(tfl.InputLayer(input_shape=input_dim,dtype=tf.int16))
-                      model.add(tf.keras.layers.concatenate([inp, tar]))
+                      
 
-                      model=tf.keras.Sequential()
+                      
                       model.add(tfl.Conv2D(filters=6,kernel_size=(10,10),strides=(2,2),padding='same',name='conv_block0'))
                       
                       # first block 
@@ -250,20 +252,19 @@ class hdrGAN:
                       model.add(tfl.Conv2D(filters=512,kernel_size=(10,10),strides=(2,2),padding='same',name='conv_block5',activation=tf.keras.activations.sigmoid))
                       model.add(tfl.PReLU())
                       
+                      return  model
+            
+            
+    def dminus(self):
                       
-                      model(inputs=[inp,tar],outputs=last) 
-            
-            
-    def dminus(self,input_dim,output_dim):
-                      initializer = tf.random_normal_initializer(0., 0.02)
-
-                      inp = tf.keras.layers.Input(shape=[256, 256, 3], name='input_image')
-                      tar = tf.keras.layers.Input(shape=[256, 256, 3], name='target_image')
-
+                      input_dim=(128,128,3)
+                      inp = tf.keras.layers.Input(shape=input_dim, name='input_image')
+                      tar = tf.keras.layers.Input(shape=input_dim, name='target_image')
+                      c=tf.keras.layers.concatenate([inp, tar])
                       model=tf.keras.Sequential()       
                      
                      # model.add(tfl.InputLayer(input_shape=input_dim,dtype=tf.int16))
-                      model.add(tf.keras.layers.concatenate([inp, tar]))
+                      
                       
 
                       model.add(tfl.Conv2D(filters=6,kernel_size=(10,10),strides=(2,2),padding='same',name='conv_block0'))
@@ -298,11 +299,12 @@ class hdrGAN:
                       model.add(tfl.Conv2D(filters=512,kernel_size=(10,10),strides=(2,2),padding='same',name='conv_block5',activation=tf.keras.activations.sigmoid))
                       model.add(MPReLU())
 
-                      return model(inputs=[inp,tar],outputs=last)         
+                      return model        
 
 
 generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+
 
 
 
@@ -322,37 +324,61 @@ tar=img
 GAN=hdrGAN(img)        
 print(img.shape)
 
-gplus=GAN.gplus(img.shape,img.shape)
-gminus=GAN.gminus(img.shape,img.shape)
-dplus=GAN.dplus(img.shape,img.shape)
-dminus=GAN.dminus(img.shape,img.shape)
+gplus=GAN.gplus()
+gminus=GAN.gminus()
+dplus=GAN.dplus()
+dminus=GAN.dminus()
 
-loss=loss(GAN.gplus,GAN.gminus,GAN.dplus,GAN.dminus)
+loss=loss(gplus,gminus,dplus,dminus)
+
+gplus_output=gplus.predict(img)
+#dplus_real_output=dplus.predict(img,tar)
+#dplus_gen_output=dplus.predict(img,gplus_output)
+
 
 
 
 #### entering training 
 
 
-gplus_output=gplus(img,training=True)
-dplus_output=dplus([img,tar],training=True)
 
 plus_loss=loss.ganloss(img,tar,'gplus')
-gplus_loss=plus_loss[0]
-dplus_loss=plus_loss[1]
+gplus_loss=np.sum(plus_loss[0])
+dplus_loss=np.sum(plus_loss[1])
+plus_total_loss=plus_loss[2]
+
 
 minus_loss=loss.ganloss(img,tar,'gminus')
-gminus_loss=minus_loss[0]
-dminus_loss=minus_loss[1]
+gminus_loss=np.sum(minus_loss[0])
+dminus_loss=np.sum(minus_loss[1])
+minus_total_loss=minus_loss[2]
 
-gen_tape=tf.GradientTape()
-disc_tape=tf.GradientTape()
+#gen_tape=tf.GradientTape()
+#disc_tape=tf.GradientTape()
 
-gplus_graident=gen_tape.gradient(gplus_loss,gplus.trainable_variables)
-dplus_gradient=disc_tape.gradient(dplus_loss,dplus.trainable_variables)
+#gplus_graident=gen_tape.gradient(gplus_loss,gplus.trainable_variables)
+#dplus_gradient=disc_tape.gradient(dplus_loss,dplus.trainable_variables)
 
-generator_optimizer.apply_gradients(zip(gplus_graident,gplus.trainable_variables))
-discriminator_optimizer.apply_gradients(zip(dplus_gradient,dplus.trainable_variables))
+
+print('loss',gplus_loss,gminus_loss)
+
+
+print('dloss',dplus_loss,dminus_loss)
+
+
+
+generator_optimizer.minimize(lambda : gplus_loss,gplus.trainable_variables)
+discriminator_optimizer.minimize(lambda :dplus_loss,dplus.trainable_variables)
+
+#gminus_graident=gen_tape.gradient(gminus_loss,gminus.trainable_variables)
+#dminus_gradient=disc_tape.gradient(dminus_loss,dminus.trainable_variables)
+
+print(23)
+generator_optimizer.minimize(lambda : gminus_loss,gminus.trainable_variables)
+discriminator_optimizer.minimize(lambda : dminus_loss,dminus.trainable_variables)
+
+
+print(gplus_loss,dplus_loss,plus_total_loss)
 
 
 
