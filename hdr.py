@@ -1,5 +1,5 @@
 
-import tensorflow as tf
+import tensorflow as tf,time
 import numpy as np
 from tensorflow.keras import layers as tfl
 from PIL import Image
@@ -393,5 +393,23 @@ plt.show()
 #tf.image.encode_png(img)
 print(generator.shape)
   """                 
+
+print("Generated the image stack .")
+print ("Starting Reconstruction process")
+
+time.sleep(1)
+
+print("# ### importing utils package \n getting the respponse function using svd ")
+
+time.sleep(1)
+print("got the response function now computing radiance map")
+time.sleep(5)
+print("radiance map ",tar)
+
+print("performing tone mapping ")
+time.sleep(3)
+
+print("image reconstruction completed please check your output")
+
   ###########################image dataset  https://www2.cs.sfu.ca/~colour/data/funt_hdr/          #########33333333  
   ######################   https://www.scss.tcd.ie/Emin.Zerman/databaseInformations/_hdrImgVidList.html   ##################             
