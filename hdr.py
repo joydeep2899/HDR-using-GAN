@@ -365,7 +365,7 @@ print('loss',gplus_loss,gminus_loss)
 
 print('dloss',dplus_loss,dminus_loss)
 
-
+"""
 
 generator_optimizer.minimize(lambda : gplus_loss,gplus.trainable_variables)
 discriminator_optimizer.minimize(lambda :dplus_loss,dplus.trainable_variables)
@@ -383,7 +383,7 @@ print(gplus_loss,dplus_loss,plus_total_loss)
 
 
 #generator=np.reshape(generator,(1,256,256,3))
-"""
+
 img=generator[0]*256
 #img=tf.dtypes.cast(img, tf.int16)
 print(img)
@@ -392,6 +392,6 @@ plt.show()
 
 #tf.image.encode_png(img)
 print(generator.shape)
-        """                 
+  """                 
   ###########################image dataset  https://www2.cs.sfu.ca/~colour/data/funt_hdr/          #########33333333  
   ######################   https://www.scss.tcd.ie/Emin.Zerman/databaseInformations/_hdrImgVidList.html   ##################             
